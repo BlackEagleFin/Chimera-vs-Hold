@@ -1,0 +1,52 @@
+name: Chimera Bench
+
+on:
+  schedule:
+    # Every 30 minutes during US market hours, weekdays.
+    # 13:00-21:00 UTC spans 9:30am-4pm Eastern in both daylight saving and
+    # standard time, so this never needs changing twice a year.
+    #
+    # The bots decide on COMPLETED 1-hour bars. Polling more often than the
+    # bar length changes nothing: every bar is processed exactly once whenever
+    # the job next runs, and missed bars are caught up. Verified by test -
+    # running every bar and running every 7th bar give identical results to
+    # the cent. Twice per bar simply keeps the dashboard fresh.
+    - cron: '0,30 13-21 * * 1-5'
+    # One run after the close to settle the final bar of the day.
+    - cron: '15 21 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Two runs at once would race on state.json.
+concurrency:
+  group: chimera-bench
+  cancel-in-progress: false
+
+# Node 20 leaves GitHub's runners on 16 Sep 2026; these majors run on Node 24.
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Run the bots
+        run: python chimera_bench.py
+
+      - name: Commit results
+        run: |
+          git config user.name  "chimera-bench"
+          git config user.email "chimera-bench@users.noreply.github.com"
+          git add state.json trades.csv dashboard.html
+          if git diff --staged --quiet; then
+            echo "No new bars - nothing to commit."
+          else
+            git commit -m "Bench $(date -u +'%Y-%m-%d %H:%M') UTC"
+            git pull --rebase --autostash || true
+            git push
+          fi
