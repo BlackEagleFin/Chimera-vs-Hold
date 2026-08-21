@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0A0A0A; --ink-2:#3A3A3A; --ink-3:#6E6E6E; --ink-4:#A6A6A6;
+  --rule:#E2E2E2; --rule-2:#F0F0F0; --paper:#FFFFFF; --wash:#FAFAFA;
+  --disp:"Inter Tight",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--disp);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 32px 96px}
+
+/* masthead */
+.mast{display:flex;align-items:baseline;gap:14px;padding:38px 0 0}
+.mast h1{font-size:17px;font-weight:600;letter-spacing:-.01em;margin:0}
+.mast .meta{font-family:var(--mono);font-size:11px;color:var(--ink-4);
+  letter-spacing:.04em;margin-left:auto}
+.countdown{display:flex;align-items:baseline;gap:8px;padding-left:18px;margin-left:18px;
+  border-left:1px solid var(--rule)}
+.countdown b{font-family:var(--mono);font-size:15px;font-weight:500;
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;min-width:62px;
+  display:inline-block;text-align:right}
+.countdown span{font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-4)}
+.dot-live{display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--ink);margin-right:6px;vertical-align:middle}
+.dot-live.shut{background:var(--ink-4)}
+
+/* scoreboard - the signature element */
+.score{display:grid;grid-template-columns:1fr auto 1fr;gap:0;
+  border-top:1px solid var(--ink);margin-top:20px;padding-top:26px}
+.side{padding-bottom:24px}
+.side.right{text-align:right}
+.side .who{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3)}
+.side .tkr{font-size:13px;color:var(--ink-2);margin-top:2px}
+.side .val{font-family:var(--mono);font-size:38px;font-weight:500;
+  letter-spacing:-.03em;margin-top:14px;line-height:1}
+.side .delta{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-top:6px}
+.vs{padding:0 30px;align-self:center;font-family:var(--mono);font-size:11px;
+  color:var(--ink-4);letter-spacing:.14em}
+
+/* the gap bar */
+.gap{border-top:1px solid var(--rule);padding:16px 0 0;margin-bottom:34px}
+.gapbar{height:2px;background:var(--rule);position:relative;margin-bottom:9px}
+.gapbar i{position:absolute;top:0;height:2px;background:var(--ink)}
+.gaplab{display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:11px;color:var(--ink-3)}
+
+/* tabs */
+.tabs{display:flex;gap:28px;border-bottom:1px solid var(--rule);margin-bottom:30px}
+.tabs button{background:none;border:none;padding:0 0 12px;cursor:pointer;
+  font-family:var(--disp);font-size:14px;color:var(--ink-4);
+  border-bottom:1px solid transparent;margin-bottom:-1px}
+.tabs button:hover{color:var(--ink-2)}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.tabs button:focus-visible{outline:1px solid var(--ink);outline-offset:3px}
+.view{display:none}.view.on{display:block}
+
+/* section label */
+.lab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
+
+/* chart */
+.pick{display:flex;gap:0;margin-bottom:22px;border:1px solid var(--rule);width:fit-content}
+.pick button{background:none;border:none;border-right:1px solid var(--rule);
+  padding:7px 16px;cursor:pointer;font-family:var(--mono);font-size:11px;
+  letter-spacing:.08em;color:var(--ink-3)}
+.pick button:last-child{border-right:none}
+.pick button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.axis{font-family:var(--mono);font-size:10px;fill:var(--ink-4)}
+.gridline{stroke:var(--rule-2);stroke-width:1}
+.pline{fill:none;stroke:var(--ink);stroke-width:1.25}
+.eline{fill:none;stroke:var(--ink);stroke-width:1.5}
+.eline.ghost{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 2}
+.eline.faint{stroke:#C8C8C8;stroke-width:1;stroke-dasharray:1 3}
+.rail{stroke:var(--rule);stroke-width:1}
+
+/* legend */
+.key{display:flex;gap:22px;flex-wrap:wrap;margin-top:16px;
+  font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.key span{display:flex;align-items:center;gap:7px}
+.key svg{width:9px;height:9px;flex:none}
+
+/* two-column comparison */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--ink)}
+.col{padding:20px 0 0}
+.col:first-child{padding-right:30px;border-right:1px solid var(--rule)}
+.col:last-child{padding-left:30px}
+.colhead{display:flex;align-items:baseline;gap:10px;margin-bottom:20px}
+.colhead .who{font-size:15px;font-weight:600}
+.colhead .tkr{font-family:var(--mono);font-size:11px;color:var(--ink-4);letter-spacing:.08em}
+.colhead .ret{margin-left:auto;font-family:var(--mono);font-size:15px;font-weight:500}
+table.cmp{width:100%;border-collapse:collapse;font-size:13.5px}
+table.cmp th{text-align:right;font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-4);font-weight:400;padding:0 0 10px;
+  border-bottom:1px solid var(--ink)}
+table.cmp th:first-child,table.cmp td:first-child{text-align:left}
+table.cmp td{text-align:right;padding:11px 0;border-bottom:1px solid var(--rule-2);
+  font-family:var(--mono);font-variant-numeric:tabular-nums}
+table.cmp td:first-child{font-family:var(--disp);color:var(--ink-2)}
+table.cmp td.lead{font-weight:500}
+table.cmp td.trail{color:var(--ink-4)}
+
+/* stats row */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:34px}
+.stat{background:var(--paper);padding:15px 16px}
+.stat .k{font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-4)}
+.stat .v{font-family:var(--mono);font-size:20px;font-weight:500;margin-top:7px;
+  letter-spacing:-.02em}
+
+/* table */
+.filters{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--rule);width:fit-content}
+.filters button{background:none;border:none;border-right:1px solid var(--rule);
+  padding:7px 15px;cursor:pointer;font-family:var(--mono);font-size:11px;
+  letter-spacing:.06em;color:var(--ink-3)}
+.filters button:last-child{border-right:none}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+thead th{text-align:right;font-weight:400;font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-4);padding:0 0 10px;
+  border-bottom:1px solid var(--ink)}
+thead th:first-child,tbody td:first-child{text-align:left}
+tbody td{text-align:right;padding:11px 0;border-bottom:1px solid var(--rule-2);
+  font-variant-numeric:tabular-nums}
+tbody tr:hover td{background:var(--wash)}
+th+th,td+td{padding-left:22px}
+.side-mark{display:inline-flex;align-items:center;gap:8px}
+.side-mark i{width:0;height:0;flex:none}
+.up-f{border-left:4px solid transparent;border-right:4px solid transparent;
+  border-bottom:7px solid var(--ink)}
+.up-o{border-left:4px solid transparent;border-right:4px solid transparent;
+  border-bottom:7px solid var(--ink-4)}
+.dn-f{border-left:4px solid transparent;border-right:4px solid transparent;
+  border-top:7px solid var(--ink)}
+.dn-o{border-left:4px solid transparent;border-right:4px solid transparent;
+  border-top:7px solid var(--ink-4)}
+.why{color:var(--ink-4);font-size:11px}
+.neg::before{content:"−";margin-right:1px}
+
+/* rules */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:0 46px}
+.rules h3{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:400;
+  margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--ink)}
+.rules ol{margin:0 0 34px;padding:0;list-style:none;counter-reset:r}
+.rules li{counter-increment:r;position:relative;padding:0 0 13px 30px;
+  font-size:14px;color:var(--ink-2);line-height:1.5}
+.rules li::before{content:counter(r);position:absolute;left:0;top:1px;
+  font-family:var(--mono);font-size:11px;color:var(--ink-4)}
+.pgrid{border-top:1px solid var(--ink);margin-top:8px}
+.prow{display:flex;justify-content:space-between;padding:11px 0;
+  border-bottom:1px solid var(--rule-2);font-size:13.5px;color:var(--ink-2)}
+.prow b{font-family:var(--mono);font-weight:500;color:var(--ink)}
+.foot{margin-top:44px;padding-top:18px;border-top:1px solid var(--rule);
+  font-size:12.5px;color:var(--ink-4);line-height:1.65;max-width:64ch}
+@media(max-width:820px){
+  .cols{grid-template-columns:1fr}
+  .col:first-child{padding-right:0;border-right:none;border-bottom:1px solid var(--rule);padding-bottom:30px}
+  .col:last-child{padding-left:0}
+}
+@media(max-width:720px){
+  .wrap{padding:0 20px 70px}
+  .score{grid-template-columns:1fr;gap:0}
+  .vs{padding:8px 0;text-align:left}
+  .side.right{text-align:left}
+  .rules{grid-template-columns:1fr}
+  .side .val{font-size:32px}
+}
+</style>
+
+<div class="wrap">
+<header class="mast">
+  <h1>Bench</h1>
+  <span class="meta" id="meta"></span>
+  <span class="countdown" id="cd"><b id="cd-time">--:--</b><span id="cd-lab">next decision</span></span>
+</header>
+
+<section class="score">
+  <div class="side">
+    <div class="who">Chimera</div>
+    <div class="tkr">CBRS · Cerebras Systems</div>
+    <div class="val" id="c-val"></div>
+    <div class="delta" id="c-delta"></div>
+  </div>
+  <div class="vs">VS</div>
+  <div class="side right">
+    <div class="who">Hold</div>
+    <div class="tkr">NVDA · NVIDIA</div>
+    <div class="val" id="h-val"></div>
+    <div class="delta" id="h-delta"></div>
+  </div>
+</section>
+
+<div class="gap">
+  <div class="gapbar"><i id="gapfill"></i></div>
+  <div class="gaplab"><span id="gaptext"></span><span id="gapwho"></span></div>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-v="chart">Chart</button>
+  <button role="tab" aria-selected="false" data-v="trades">Trades</button>
+  <button role="tab" aria-selected="false" data-v="rules">Rules</button>
+</nav>
+
+<section class="view on" id="v-chart">
+  <div class="cols">
+    <div class="col">
+      <div class="colhead">
+        <span class="who">Chimera</span>
+        <span class="tkr">CBRS</span>
+        <span class="ret" id="r-c"></span>
+      </div>
+      <p class="lab">Price, with every trade marked</p>
+      <svg id="p-c" viewBox="0 0 480 260" role="img" aria-label="Cerebras price with Chimera trades"></svg>
+      <div class="key" id="k-c"></div>
+    </div>
+    <div class="col">
+      <div class="colhead">
+        <span class="who">Hold</span>
+        <span class="tkr">NVDA</span>
+        <span class="ret" id="r-h"></span>
+      </div>
+      <p class="lab">Price. One purchase on day one, nothing since</p>
+      <svg id="p-h" viewBox="0 0 480 260" role="img" aria-label="NVIDIA price"></svg>
+      <div class="key"><span>Bought once at the open</span></div>
+    </div>
+  </div>
+
+  <p class="lab" style="margin-top:46px">Account value, both bots, same axis</p>
+  <svg id="equity" viewBox="0 0 1000 260" role="img" aria-label="Account value for both bots"></svg>
+  <div class="key" id="key2"></div>
+
+  <p class="lab" style="margin-top:46px">Side by side</p>
+  <table class="cmp"><thead><tr><th>Measure</th><th>Chimera · CBRS</th><th>Hold · NVDA</th></tr></thead>
+  <tbody id="cmp"></tbody></table>
+</section>
+
+<section class="view" id="v-trades">
+  <div class="filters" id="filters"></div>
+  <table>
+    <thead><tr>
+      <th>When</th><th>Action</th><th>Price</th><th>Shares</th>
+      <th>Result</th><th>Bars</th><th>Trigger</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <p class="lab" id="tcount" style="margin-top:18px"></p>
+</section>
+
+<section class="view" id="v-rules">
+  <div class="rules">
+    <div>
+      <h3>Long engine</h3>
+      <ol>
+        <li>Buy a slice whenever the price drops STEP below the lowest price currently held.</li>
+        <li>Sell each slice the moment it is up STEP from what it was bought for.</li>
+        <li>Never hold more than five slices at once.</li>
+        <li>If a slice has been held too long and is down too much, sell it anyway.</li>
+        <li>Buy smaller than usual on any day that moves far more than normal.</li>
+      </ol>
+      <h3>Hold</h3>
+      <ol><li>Buy once at the start. Hold forever.</li></ol>
+    </div>
+    <div>
+      <h3>Short engine</h3>
+      <ol>
+        <li>Short a slice whenever the price rises STEP above the highest price currently shorted.</li>
+        <li>Cover each slice the moment it is down STEP from where it was shorted.</li>
+        <li>Never hold more than five short slices at once.</li>
+        <li>If a slice has been open too long and is losing, cover it anyway.</li>
+        <li>Short smaller than usual on any day that moves far more than normal.</li>
+        <li>Cover immediately if a slice is down past the hard stop, regardless.</li>
+      </ol>
+      <h3>Settings</h3>
+      <div class="pgrid" id="pgrid"></div>
+    </div>
+  </div>
+  <p class="foot">Simulated only. No real money and no orders are placed. Costs are modelled at
+  two basis points of slippage each way, the SEC fee at $20.60 per million dollars of proceeds,
+  and the FINRA fee at $0.000195 per share sold. Settings were chosen by resampling Cerebras'
+  own daily returns into four hundred synthetic paths, not by fitting to the single real history
+  shown here.</p>
+</section>
+</div>
+
+<script>
+const D = {"window":{"start":"2026-08-20","end":"2026-08-20","days":1},"updated":"2026-08-21T04:18:09Z","next_decision":"2026-08-21T05:00:00Z","market_open":false,"params":{"step":0.01,"max_bars":13,"max_loss":0.2,"hard_stop":0.1,"vol_mult":3.0,"bar":"1h","slots":5},"dates":["2026-08-20 20:00"],"cbrs":[209.85],"nvda":[216.85],"chimera":{"curve":[500.0],"final":500.0,"open_long":0,"open_short":0,"dd":0.0},"hold_nvda":{"curve":[499.9],"final":499.9,"dd":0.0},"hold_cbrs":{"curve":[499.9],"final":499.9,"dd":0.0},"trades":[]};
+const money = v => "$" + v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const money0 = v => "$" + Math.round(v).toLocaleString();
+const pct = v => (v>=0?"+":"\u2212") + Math.abs(v*100).toFixed(1) + "%";
+const fmtDate = s => {
+  if(!s) return "\u2014";
+  const hasTime = s.includes(" ");
+  const d = new Date(hasTime ? s.replace(" ","T")+"Z" : s+"T00:00:00Z");
+  if(isNaN(d)) return s;
+  return hasTime
+    ? d.toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})
+    : d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+};
+
+const cFinal = D.chimera.final;
+const hFinal = D.hold_nvda.final;
+document.getElementById("c-val").textContent = money(cFinal);
+document.getElementById("h-val").textContent = money(hFinal);
+document.getElementById("c-delta").textContent = pct(cFinal/500-1) + " · " + D.trades.length + " trades";
+document.getElementById("h-delta").textContent = pct(hFinal/500-1) + " · 1 trade";
+document.getElementById("meta").textContent =
+  D.window.start + " \u2014 " + D.window.end + " \u00b7 " + D.window.days + " shared trading days";
+
+const lead = Math.max(cFinal,hFinal), lag = Math.min(cFinal,hFinal);
+document.getElementById("gapfill").style.width = (lag/lead*100).toFixed(1)+"%";
+document.getElementById("gaptext").textContent =
+  money(lead-lag) + " apart";
+document.getElementById("gapwho").textContent =
+  (cFinal>hFinal ? "Chimera ahead" : "Hold ahead");
+
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected", x===b));
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+  document.getElementById("v-"+b.dataset.v).classList.add("on");
+});
+
+function mini(svgId, prices, dates, marks, keyId){
+  const W=480,H=260,L=46,R=6,T=10,B=(marks?42:26), iw=W-L-R, ih=H-T-B;
+  const lo=Math.min(...prices), hi=Math.max(...prices), rg=(hi-lo)||1;
+  const X=i=>L+(prices.length>1?i/(prices.length-1):0)*iw;
+  const Y=v=>T+ih-(v-lo)/rg*ih;
+  let g="";
+  for(let k=0;k<=3;k++){
+    const v=lo+rg*k/3, y=Y(v);
+    g+=`<line class="gridline" x1="${L}" y1="${y}" x2="${W-R}" y2="${y}"/>`;
+    g+=`<text class="axis" x="${L-8}" y="${y+3}" text-anchor="end">${Math.round(v)}</text>`;
+  }
+  g+=`<path class="pline" d="${prices.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1)).join(" ")}"/>`;
+  if(marks){
+    const railY=T+ih+15;
+    g+=`<line class="rail" x1="${L}" y1="${railY}" x2="${W-R}" y2="${railY}"/>`;
+    const idx={}; dates.forEach((d,i)=>idx[d]=i);
+    marks.forEach(t=>{
+      const i=idx[t.d]; if(i===undefined) return;
+      const x=X(i), up=(t.side==="buy"||t.side==="sell");
+      const fill=(t.side==="buy"||t.side==="short")?"#0A0A0A":"#A6A6A6";
+      const y=railY+(up?4:-4);
+      g+= up ? `<path d="M${x} ${y+6} l3 -6 h-6 z" fill="${fill}"/>`
+             : `<path d="M${x} ${y-6} l3 6 h-6 z" fill="${fill}"/>`;
+    });
+  }
+  g+=`<text class="axis" x="${L}" y="${H-6}">${fmtDate(dates[0])}</text>`;
+  g+=`<text class="axis" x="${W-R}" y="${H-6}" text-anchor="end">${fmtDate(dates[dates.length-1])}</text>`;
+  document.getElementById(svgId).innerHTML=g;
+  if(keyId) document.getElementById(keyId).innerHTML=`
+    <span><svg viewBox="0 0 10 10"><path d="M5 1 l4 8 h-8 z" fill="#0A0A0A"/></svg>Bought</span>
+    <span><svg viewBox="0 0 10 10"><path d="M5 1 l4 8 h-8 z" fill="#A6A6A6"/></svg>Sold</span>
+    <span><svg viewBox="0 0 10 10"><path d="M5 9 l4 -8 h-8 z" fill="#0A0A0A"/></svg>Shorted</span>
+    <span><svg viewBox="0 0 10 10"><path d="M5 9 l4 -8 h-8 z" fill="#A6A6A6"/></svg>Covered</span>`;
+}
+
+function drawPanels(){
+  document.getElementById("r-c").textContent = pct(D.chimera.final/500-1);
+  document.getElementById("r-h").textContent = pct(D.hold_nvda.final/500-1);
+  mini("p-c", D.cbrs, D.dates, D.trades, "k-c");
+  mini("p-h", D.nvda, D.dates, null, null);
+}
+
+function drawEquity(){
+  const a=D.chimera.curve, b=D.hold_nvda.curve, c=D.hold_cbrs.curve;
+  const W=1000,H=260,L=54,R=8,T=14,B=34, iw=W-L-R, ih=H-T-B;
+  const all=a.concat(b,c,[500]);
+  const lo=Math.min(...all), hi=Math.max(...all), rg=(hi-lo)||1;
+  const X=i=>L+(a.length>1?i/(a.length-1):0)*iw, Y=v=>T+ih-(v-lo)/rg*ih;
+  let g="";
+  for(let k=0;k<=3;k++){
+    const v=lo+rg*k/3, y=Y(v);
+    g+=`<line class="gridline" x1="${L}" y1="${y}" x2="${W-R}" y2="${y}"/>`;
+    g+=`<text class="axis" x="${L-10}" y="${y+3}" text-anchor="end">${money0(v)}</text>`;
+  }
+  const y500=Y(500);
+  g+=`<line x1="${L}" y1="${y500}" x2="${W-R}" y2="${y500}" stroke="#A6A6A6" stroke-width="1" stroke-dasharray="1 4"/>`;
+  g+=`<text class="axis" x="${W-R}" y="${y500-6}" text-anchor="end">start</text>`;
+  const line=(arr,cls)=>`<path class="${cls}" d="${arr.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1)).join(" ")}"/>`;
+  g+=line(c,"eline faint");
+  g+=line(b,"eline ghost");
+  g+=line(a,"eline");
+  document.getElementById("equity").innerHTML=g;
+  document.getElementById("key2").innerHTML=`
+    <span><svg viewBox="0 0 10 10"><line x1="0" y1="5" x2="10" y2="5" stroke="#0A0A0A" stroke-width="1.5"/></svg>Chimera on CBRS</span>
+    <span><svg viewBox="0 0 10 10"><line x1="0" y1="5" x2="10" y2="5" stroke="#6E6E6E" stroke-width="1" stroke-dasharray="3 2"/></svg>Hold on NVDA</span>
+    <span><svg viewBox="0 0 10 10"><line x1="0" y1="5" x2="10" y2="5" stroke="#C8C8C8" stroke-width="1" stroke-dasharray="1 3"/></svg>Hold on CBRS, for reference</span>`;
+}
+
+function drawCompare(){
+  const t=D.trades, sells=t.filter(x=>x.pnl!==null);
+  const wins=sells.filter(x=>x.pnl>0).length;
+  const gw=sells.filter(x=>x.pnl>0).reduce((s,x)=>s+x.pnl,0);
+  const gl=Math.abs(sells.filter(x=>x.pnl<=0).reduce((s,x)=>s+x.pnl,0));
+  const held=sells.map(x=>x.held).sort((a,b)=>a-b);
+  const C=D.chimera, H=D.hold_nvda;
+  const rows=[
+    ["Final value", money(C.final), money(H.final), C.final>H.final],
+    ["Return", pct(C.final/500-1), pct(H.final/500-1), C.final>H.final],
+    ["Worst drop", (C.dd*100).toFixed(1)+"%", (H.dd*100).toFixed(1)+"%", C.dd<H.dd],
+    ["Trades", String(t.length), "1", null],
+    ["Closed round trips", String(sells.length), "0", null],
+    ["Win rate", sells.length?Math.round(wins/sells.length*100)+"%":"\u2014", "\u2014", null],
+    ["Profit factor", gl>0?(gw/gl).toFixed(2):"\u2014", "\u2014", null],
+    ["Median hold", held.length?held[Math.floor(held.length/2)]+" bars":"\u2014", "never closes", null],
+    ["Open positions", C.open_long+" long, "+C.open_short+" short", "1 long", null],
+  ];
+  document.getElementById("cmp").innerHTML = rows.map(([k,a,b,aWins])=>{
+    const ca = aWins===true?"lead":aWins===false?"trail":"";
+    const cb = aWins===false?"lead":aWins===true?"trail":"";
+    return `<tr><td>${k}</td><td class="${ca}">${a}</td><td class="${cb}">${b}</td></tr>`;
+  }).join("");
+}
+
+let FIL="all";
+const LABELS={buy:["Bought","up-f"],sell:["Sold","up-o"],short:["Shorted","dn-f"],cover:["Covered","dn-o"]};
+function drawTrades(){
+  document.getElementById("filters").innerHTML =
+    [["all","All"],["buy","Bought"],["sell","Sold"],["short","Shorted"],["cover","Covered"]]
+    .map(([k,l])=>`<button data-f="${k}" aria-pressed="${FIL===k}">${l}</button>`).join("");
+  document.querySelectorAll("#filters button").forEach(b=>b.onclick=()=>{FIL=b.dataset.f;drawTrades()});
+  const rows=D.trades.filter(t=>FIL==="all"||t.side===FIL).slice().reverse();
+  document.getElementById("tbody").innerHTML = rows.length ? rows.map(t=>{
+    const [lab,cls]=LABELS[t.side];
+    const res = t.pnl===null ? "\u2014"
+      : (t.pnl<0 ? `<span class="neg">${money(Math.abs(t.pnl)).slice(1)}</span>` : money(t.pnl));
+    return `<tr>
+      <td>${fmtDate(t.d)}</td>
+      <td><span class="side-mark"><i class="${cls}"></i>${lab}</span></td>
+      <td>${t.px.toFixed(2)}</td>
+      <td>${t.sh.toFixed(3)}</td>
+      <td>${res}</td>
+      <td>${t.held===null?"\u2014":t.held}</td>
+      <td class="why">${t.why}</td></tr>`;
+  }).join("") : `<tr><td colspan="7" style="padding:40px 0;text-align:center;color:var(--ink-4)">No trades of this kind.</td></tr>`;
+  document.getElementById("tcount").textContent =
+    rows.length + " of " + D.trades.length + " trades";
+}
+
+function drawRules(){
+  const p=D.params;
+  document.getElementById("pgrid").innerHTML = [
+    ["Step", (p.step*100).toFixed(0)+"%"],
+    ["Slices", "5 per side"],
+    ["Held too long", p.max_days+" days"],
+    ["Down too much", (p.max_loss*100).toFixed(0)+"%"],
+    ["Hard stop", (p.hard_stop*100).toFixed(0)+"%"],
+    ["Unusual day", p.vol_mult+"\u00d7 average"],
+    ["Starting cash", "$500 each"],
+  ].map(([k,v])=>`<div class="prow"><span>${k}</span><b>${v}</b></div>`).join("");
+  document.querySelectorAll(".rules li").forEach(li=>{
+    li.innerHTML = li.innerHTML.replace(/STEP/g, `<b style="font-family:var(--mono);font-weight:500;color:var(--ink)">${(p.step*100).toFixed(0)}%</b>`);
+  });
+}
+
+drawPanels(); drawEquity(); drawCompare(); drawTrades(); drawRules();
+
+function tickClock(){
+  const el=document.getElementById("cd-time"), lab=document.getElementById("cd-lab");
+  if(!el||!D.next_decision) return;
+  const left=(new Date(D.next_decision)-new Date())/1000;
+  if(left<=0){
+    el.textContent="due";
+    lab.textContent="waiting for the run";
+    return;
+  }
+  const h=Math.floor(left/3600), m=Math.floor(left%3600/60), s=Math.floor(left%60);
+  el.textContent = h>0 ? `${h}h ${String(m).padStart(2,"0")}m`
+                       : `${m}:${String(s).padStart(2,"0")}`;
+  lab.innerHTML = `<span class="dot-live${D.market_open?"":" shut"}"></span>`
+                + (D.market_open ? "next decision" : "market closed");
+}
+tickClock(); setInterval(tickClock,1000);
+</script>
