@@ -1,2 +1,3 @@
 at,bot,ticker,side,price,shares,pnl,held_bars,trigger
 2026-08-20T20:00:00Z,Hold,NVDA,buy,216.8934,2.30528,,,open
+2026-08-21T13:30:00Z,Chimera,CBRS,buy,199.3199,0.50171,,,dip

@@ -296,7 +296,7 @@ th+th,td+td{padding-left:22px}
 </div>
 
 <script>
-const D = {"window":{"start":"2026-08-20","end":"2026-08-20","days":1},"updated":"2026-08-21T04:18:09Z","next_decision":"2026-08-21T05:00:00Z","market_open":false,"params":{"step":0.01,"max_bars":13,"max_loss":0.2,"hard_stop":0.1,"vol_mult":3.0,"bar":"1h","slots":5},"dates":["2026-08-20 20:00"],"cbrs":[209.85],"nvda":[216.85],"chimera":{"curve":[500.0],"final":500.0,"open_long":0,"open_short":0,"dd":0.0},"hold_nvda":{"curve":[499.9],"final":499.9,"dd":0.0},"hold_cbrs":{"curve":[499.9],"final":499.9,"dd":0.0},"trades":[]};
+const D = {"window":{"start":"2026-08-20","end":"2026-08-21","days":4},"updated":"2026-08-21T14:58:10Z","next_decision":"2026-08-21T15:58:07Z","market_open":true,"params":{"step":0.01,"max_bars":13,"max_loss":0.2,"hard_stop":0.1,"vol_mult":3.0,"bar":"1h","slots":5},"dates":["2026-08-20 20:00","2026-08-21 13:30","2026-08-21 14:30","2026-08-21 14:58"],"cbrs":[209.76,199.28,199.0,199.3061],"nvda":[217.05,214.6446,214.8451,214.82],"chimera":{"curve":[500.0,499.98,499.8395,499.9931],"final":499.99,"open_long":1,"open_short":0,"dd":0.0003},"hold_nvda":{"curve":[499.9,494.816,495.2782,495.2203],"final":495.22,"dd":0.0102},"hold_cbrs":{"curve":[499.9,494.816,495.2782,495.2203],"final":495.22,"dd":0.0102},"trades":[{"d":"2026-08-21 13:30","side":"buy","px":199.3199,"sh":0.50171,"pnl":null,"held":null,"why":"dip"}]};
 const money = v => "$" + v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const money0 = v => "$" + Math.round(v).toLocaleString();
 const pct = v => (v>=0?"+":"\u2212") + Math.abs(v*100).toFixed(1) + "%";
