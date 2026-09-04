@@ -58,3 +58,5 @@ at,bot,ticker,side,price,shares,pnl,held_bars,trigger
 2026-09-04T17:34:35Z,Chimera,CBRS,cover,211.8874,0.2568,-3.2525,13,stale
 2026-09-04T18:30:00Z,Chimera,CBRS,cover,211.2422,0.25054,-1.7782,13,stale
 2026-09-04T18:37:48Z,Chimera,CBRS,cover,211.5123,0.48627,-1.2784,13,stale
+2026-09-04T19:06:02Z,Chimera,CBRS,buy,209.892,0.481,,,dip
+2026-09-04T19:06:02Z,Chimera,CBRS,cover,209.892,0.47514,1.0882,9,target
